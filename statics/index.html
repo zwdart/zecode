@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light dark">
-    <title>zeco - 极速二维码工具</title>
+    <title>极速二维码工具 - zeco</title>
 
-    <!-- 关键：渲染前确定主题，避免闪烁（FOUC） -->
     <script>
         (function () {
             try {
                 var saved = localStorage.getItem('zeco-theme');
                 var prefersDark = window.matchMedia
                     && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = saved || (prefersDark ? 'dark' : 'light');
-                document.documentElement.dataset.theme = theme;
+                document.documentElement.dataset.theme = saved || (prefersDark ? 'dark' : 'light');
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
             }
@@ -22,77 +20,55 @@
     </script>
 
     <style>
-        /* =========================================================
-           浅色（默认）
-           ========================================================= */
         :root {
             color-scheme: light;
-
             --primary: #4f46e5;
             --primary-hover: #4338ca;
             --primary-soft: rgba(79, 70, 229, 0.1);
-
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
             --surface-solid: #ffffff;
             --surface-soft: #f9fafb;
             --surface-muted: #f3f4f6;
             --surface-hover: #eef2ff;
-
             --text-main: #1f2937;
             --text-sub: #6b7280;
             --text-mute: #9ca3af;
             --text-success: #059669;
-
             --border-color: #e5e7eb;
             --border-strong: #d1d5db;
-
             --divider: #cbd5e1;
             --police-icon: #94a3b8;
             --toast-bg: #1f2937;
             --toast-text: #ffffff;
             --modal-mask-bg: rgba(17, 24, 39, 0.45);
-
             --radius: 16px;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-
-            /* 输入区与上传区的初始高度 */
             --input-min-height: 132px;
         }
-
-        /* =========================================================
-           暗黑（由 html[data-theme="dark"] 触发）
-           ========================================================= */
         html[data-theme="dark"] {
             color-scheme: dark;
-
             --primary: #818cf8;
             --primary-hover: #a5b4fc;
             --primary-soft: rgba(129, 140, 248, 0.18);
-
             --bg-gradient: linear-gradient(135deg, #0b1220 0%, #1e293b 100%);
             --glass-bg: rgba(30, 41, 59, 0.92);
             --surface-solid: #1e293b;
             --surface-soft: #0f172a;
             --surface-muted: #334155;
             --surface-hover: rgba(129, 140, 248, 0.15);
-
             --text-main: #e2e8f0;
             --text-sub: #a8b5c8;
             --text-mute: #7c8ba1;
             --text-success: #34d399;
-
             --border-color: #334155;
             --border-strong: #475569;
-
             --divider: #4b5b70;
             --police-icon: #64748b;
             --toast-bg: #f1f5f9;
             --toast-text: #0f172a;
             --modal-mask-bg: rgba(0, 0, 0, 0.65);
-
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5),
-                      0 8px 10px -6px rgba(0, 0, 0, 0.4);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
@@ -105,36 +81,50 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 84px 20px 20px;
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* 布局容器 */
-        .container {
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            align-items: start;
-        }
-
-        @media (min-width: 768px) {
-            .container { grid-template-columns: 1fr 1fr; }
-        }
-
-        /* 卡片样式 */
-        .card {
+        /* ============ 顶部导航 ============ */
+        .top-nav {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
-            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
             box-shadow: var(--shadow);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease;
+            z-index: 80;
+        }
+        .nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            text-decoration: none;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-item:hover { color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: #fff; }
+        .nav-icon { width: 16px; height: 16px; fill: currentColor; display: block; }
+        @media (max-width: 420px) {
+            .nav-item { padding: 8px 12px; }
+            .nav-item span { display: none; }
+            .top-nav { gap: 2px; }
         }
 
+        /* ============ 布局 ============ */
         .header {
             text-align: center;
             margin-bottom: 20px;
@@ -149,8 +139,27 @@
             justify-content: center;
             gap: 10px;
         }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (min-width: 768px) {
+            .container { grid-template-columns: 1fr 1fr; }
+        }
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
 
-        /* 表单元素 */
         label {
             display: block;
             font-weight: 600;
@@ -158,8 +167,7 @@
             color: var(--text-main);
             font-size: 0.95rem;
         }
-
-        textarea, input[type="text"] {
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid var(--border-color);
@@ -170,20 +178,13 @@
             color: var(--text-main);
             resize: vertical;
         }
-
-        textarea::placeholder {
-            color: var(--text-mute);
-        }
-
-        textarea:focus, input[type="text"]:focus {
+        textarea::placeholder { color: var(--text-mute); }
+        textarea:focus {
             border-color: var(--primary);
             background: var(--surface-solid);
             box-shadow: 0 0 0 3px var(--primary-soft);
         }
-
-        #gen-input {
-            min-height: var(--input-min-height);
-        }
+        #gen-input { min-height: var(--input-min-height); }
 
         button {
             width: 100%;
@@ -202,7 +203,6 @@
             gap: 8px;
             margin-top: 12px;
         }
-
         button:hover { background: var(--primary-hover); transform: translateY(-1px); }
         button:active { transform: translateY(0); }
         button:disabled {
@@ -212,7 +212,6 @@
             opacity: 0.7;
         }
 
-        /* 上传区域 */
         .upload-zone {
             border: 2px dashed var(--border-color);
             border-radius: 12px;
@@ -229,27 +228,14 @@
             align-items: center;
             justify-content: center;
         }
-        .upload-zone:hover {
-            border-color: var(--primary);
-            background: var(--surface-hover);
-        }
+        .upload-zone:hover { border-color: var(--primary); background: var(--surface-hover); }
         .upload-zone input {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
         }
-        .upload-icon {
-            width: 40px;
-            height: 40px;
-            color: var(--text-mute);
-            margin-bottom: 10px;
-        }
-        .upload-tip {
-            color: var(--text-sub);
-        }
-        .preview-img {
-            max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 10px; display: none;
-        }
+        .upload-icon { width: 40px; height: 40px; color: var(--text-mute); margin-bottom: 10px; }
+        .upload-tip { color: var(--text-sub); }
+        .preview-img { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 10px; display: none; }
 
-        /* 结果展示 */
         .result-area {
             margin-top: 20px;
             padding: 15px;
@@ -271,306 +257,35 @@
             margin-top: 10px;
             text-align: left;
         }
-        .success-tip {
-            font-weight: bold;
-            color: var(--text-success);
-            margin-bottom: 5px;
-        }
+        .success-tip { font-weight: bold; color: var(--text-success); margin-bottom: 5px; }
 
-        /* 图标 SVG */
         .icon { width: 20px; height: 20px; fill: currentColor; }
-
-        /* 动画 */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 提示条 */
-        .toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: var(--toast-bg); color: var(--toast-text);
-            padding: 10px 20px; border-radius: 50px;
-            font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        .toast.show { opacity: 1; }
-
-        /* 加载圈 */
         .spinner {
             width: 18px; height: 18px; border: 2px solid #ffffff; border-top-color: transparent;
             border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ============ 页脚 ============ */
-        .footer {
-            width: 100%;
-            max-width: 900px;
-            margin-top: 30px;
-            padding: 20px 10px 10px;
-            text-align: center;
-            color: var(--text-sub);
-            font-size: 0.85rem;
-            line-height: 1.9;
-        }
-        .footer-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 6px 10px;
-            margin-bottom: 4px;
-        }
-        .footer a {
-            color: var(--text-sub);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        .footer a:hover { color: var(--primary); }
-        .footer .divider {
-            color: var(--divider);
-            user-select: none;
-        }
-        .footer .copy {
-            color: var(--text-mute);
-            margin-top: 2px;
-            font-size: 0.8rem;
-        }
-        .footer .beian-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .footer .beian-item .police-icon {
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-            background: var(--police-icon);
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
-
-        /* ============ 主题切换按钮 ============ */
-        .theme-toggle {
-            width: auto;
-            height: auto;
-            padding: 4px 6px;
-            margin: 0;
-            background: transparent;
-            color: var(--text-sub);
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s, background 0.2s;
-            vertical-align: middle;
-        }
-        .theme-toggle:hover {
-            color: var(--primary);
-            background: var(--surface-hover);
-            transform: none;
-        }
-        .theme-toggle .theme-icon {
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
-            display: block;
-        }
-        html[data-theme="light"] .theme-icon-sun  { display: none; }
-        html[data-theme="dark"]  .theme-icon-moon { display: none; }
-
-        /* ============ 右上角功能菜单 ============ */
-        .corner-menu {
-            position: fixed;
-            top: 16px;
-            /* ★ 宽屏时贴近卡片右上角，窄屏时退回屏幕边缘 16px */
-            right: max(16px, calc(50% - 450px - 56px));
-            z-index: 80;
-        }
-        .corner-btn {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            margin: 0;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            color: var(--text-sub);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            box-shadow: var(--shadow);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .corner-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary);
-            transform: translateY(-1px);
-        }
-        .corner-btn:active {
-            transform: translateY(0);
-        }
-        .corner-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-        .corner-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            min-width: 180px;
-            background: var(--surface-solid);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18),
-                        0 8px 10px -6px rgba(0, 0, 0, 0.12);
-            padding: 6px;
-            display: none;
-        }
-        .corner-dropdown.show {
-            display: block;
-            animation: fadeIn 0.15s ease;
-        }
-        .corner-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: background 0.15s, color 0.15s;
-        }
-        .corner-item:hover {
-            background: var(--surface-hover);
-            color: var(--primary);
-        }
-        .corner-item svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-            flex-shrink: 0;
-        }
-
-        /* ============ 模态框 ============ */
-        .modal-mask {
-            position: fixed;
-            inset: 0;
-            background: var(--modal-mask-bg);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 90;
-        }
-        .modal-mask.show {
-            display: flex;
-            animation: fadeIn 0.2s ease;
-        }
-        .modal {
-            background: var(--surface-solid);
-            color: var(--text-main);
-            border-radius: var(--radius);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
-            width: 100%;
-            max-width: 520px;
-            max-height: 80vh;
-            overflow: auto;
-            padding: 26px 24px 22px;
-            position: relative;
-            animation: fadeIn 0.25s ease;
-        }
-        .modal h2 {
-            font-size: 1.15rem;
-            color: var(--primary);
-            margin-bottom: 14px;
-            padding-right: 30px;
-        }
-        .modal p {
-            color: var(--text-main);
-            line-height: 1.75;
-            margin-bottom: 10px;
-            font-size: 0.95rem;
-        }
-        .modal-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            margin: 0;
-            border-radius: 50%;
-            background: var(--surface-muted);
-            color: var(--text-sub);
-            font-size: 20px;
-            line-height: 1;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .modal-close:hover {
-            background: var(--border-strong);
-            color: var(--text-main);
-            transform: none;
-        }
-        .modal .link-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .modal .link-item {
-            display: block;
-            padding: 12px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            text-decoration: none;
-            color: var(--text-main);
-            transition: all 0.2s;
-        }
-        .modal .link-item:hover {
-            border-color: var(--primary);
-            background: var(--surface-hover);
-            transform: none;
-            color: var(--primary);
-        }
-        .modal .link-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-        .modal .link-desc {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--text-sub);
-            margin-top: 3px;
-        }
     </style>
 </head>
 <body>
 
-    <!-- ============ 右上角功能菜单 ============ -->
-    <div class="corner-menu" id="corner-menu">
-        <button class="corner-btn" onclick="toggleCornerMenu(event)" aria-label="功能菜单" title="功能菜单">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+        <a href="index.html" class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v3h-3v-3zm-3 3h2v2h-2v-2zm-3-3h2v2h-2v-2z"/>
             </svg>
-        </button>
-        <div class="corner-dropdown" id="corner-dropdown">
-            <a href="scanner.html" class="corner-item">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9.5 3a6.5 6.5 0 015.98 9.03l4.24 4.24-1.41 1.41-4.24-4.24A6.5 6.5 0 119.5 3zm0 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/>
-                </svg>
-                <span>摄像头扫码</span>
-            </a>
-        </div>
-    </div>
+            <span>二维码</span>
+        </a>
+        <a href="scanner.html" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 7V4a1 1 0 011-1h3v2H5v2H3zm16-3a1 1 0 011 1v3h-2V5h-2V3h3zM3 17v3a1 1 0 001 1h3v-2H5v-2H3zm16 2v2h2a1 1 0 001-1v-3h-2v2h-1zM5 11h14v2H5v-2z"/>
+            </svg>
+            <span>扫码</span>
+        </a>
+    </nav>
 
     <div class="header">
         <h1>
@@ -625,189 +340,25 @@
         </div>
     </div>
 
-    <!-- ============ 页脚 ============ -->
-    <footer class="footer">
-        <div class="footer-row">
-            <a href="#" onclick="showAbout(event)">关于</a>
-            <span class="divider">·</span>
-            <a href="https://fone.taobao.com" target="_blank" rel="noopener">小店</a>
-            <span class="divider">·</span>
-            <a href="#" onclick="showLinks(event)">友链</a>
-            <span class="divider">·</span>
-            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"
-                    aria-label="切换主题" title="切换主题">
-                <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3a9 9 0 109 9 7 7 0 01-9-9z"/>
-                </svg>
-                <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0-3a1 1 0 011 1v2a1 1 0 11-2 0V5a1 1 0 011-1zm0 14a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM4 12a1 1 0 011-1h2a1 1 0 110 2H5a1 1 0 01-1-1zm14 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM6.34 6.34a1 1 0 011.42 0l1.41 1.42a1 1 0 11-1.41 1.41L6.34 7.76a1 1 0 010-1.42zm9.9 9.9a1 1 0 011.41 0l1.42 1.41a1 1 0 11-1.42 1.42l-1.41-1.42a1 1 0 010-1.41zM6.34 17.66a1 1 0 010-1.41l1.42-1.42a1 1 0 111.41 1.42l-1.41 1.41a1 1 0 01-1.42 0zm9.9-9.9a1 1 0 010-1.41l1.41-1.42a1 1 0 111.42 1.42l-1.42 1.41a1 1 0 01-1.41 0z"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- 备案信息：无备案可整块注释或置空 -->
-        <div class="footer-row" id="footer-beian"></div>
-
-        <div class="footer-row copy" id="footer-copy"></div>
-    </footer>
-
-    <!-- ============ 模态框 ============ -->
-    <div class="modal-mask" id="modal-mask" onclick="if(event.target===this)closeModal()">
-        <div class="modal" role="dialog" aria-modal="true">
-            <button class="modal-close" onclick="closeModal()" aria-label="关闭">&times;</button>
-            <div id="modal-body"></div>
-        </div>
-    </div>
-
-    <div id="toast" class="toast">提示信息</div>
+    <!-- 通用组件：页脚 / 模态框 / Toast / 主题按钮 -->
+    <script src="lib/footer.js"></script>
 
     <script>
-        /* =========================================================
-           站点信息配置
-           ========================================================= */
-        const SITE = {
-            name: 'zeco',
-            about: `
-                <p><strong>zeco</strong> 是一个极简的在线二维码工具，支持二维码的生成与识别。</p>
-                <p>生成：输入任意文本或网址，一键生成二维码并下载 PNG。</p>
-                <p>识别：上传二维码图片，自动解析出原始内容并支持复制。</p>
-            `,
-            links: [
-                { name: '关于我们', url: 'https://zebra.dart.xin', desc: '主页' },
-                { name: '一个小店', url: 'https://fone.taobao.com', desc: '淘宝小店' },
-            ],
-            beian: {
-                // icp:    { text: '鄂ICP备2026xxxxx号-1', url: 'https://beian.miit.gov.cn/' },
-                // police: { text: '浙公网安备330109xxxx号', url: 'https://beian.mps.gov.cn/' },
-            },
-            copyright: '© 2026 zeco · Simple codes, just zeco.',
-        };
-
-        /* =========================================================
-           主题切换
-           ========================================================= */
-        const THEME_KEY = 'zeco-theme';
-
-        function applyTheme(theme) {
-            document.documentElement.dataset.theme = theme;
-        }
-
-        function toggleTheme() {
-            const cur = document.documentElement.dataset.theme || 'light';
-            const next = cur === 'dark' ? 'light' : 'dark';
-            applyTheme(next);
-            try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-        }
-
-        (function watchSystemTheme() {
-            if (!window.matchMedia) return;
-            const mq = window.matchMedia('(prefers-color-scheme: dark)');
-            const handler = (e) => {
-                let saved = null;
-                try { saved = localStorage.getItem(THEME_KEY); } catch (err) {}
-                if (!saved) applyTheme(e.matches ? 'dark' : 'light');
-            };
-            if (mq.addEventListener) mq.addEventListener('change', handler);
-            else if (mq.addListener) mq.addListener(handler);
-        })();
-
-        /* =========================================================
-           右上角功能菜单
-           ========================================================= */
-        function toggleCornerMenu(e) {
-            if (e) e.stopPropagation();
-            document.getElementById('corner-dropdown').classList.toggle('show');
-        }
-        function closeCornerMenu() {
-            document.getElementById('corner-dropdown').classList.remove('show');
-        }
-        document.addEventListener('click', function (e) {
-            const menu = document.getElementById('corner-menu');
-            if (menu && !menu.contains(e.target)) closeCornerMenu();
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeCornerMenu();
+        /* 导航：点击当前页不重载 */
+        document.querySelectorAll('.nav-item').forEach(function (item) {
+            item.addEventListener('click', function (e) {
+                if (this.classList.contains('active')) e.preventDefault();
+            });
         });
 
-        /* =========================================================
-           渲染页脚
-           ========================================================= */
-        function renderFooter() {
-            const beianEl = document.getElementById('footer-beian');
-            const items = [];
-
-            if (SITE.beian.icp && SITE.beian.icp.text) {
-                items.push(
-                    `<a class="beian-item" href="${SITE.beian.icp.url}" target="_blank" rel="noopener">${SITE.beian.icp.text}</a>`
-                );
-            }
-            if (SITE.beian.police && SITE.beian.police.text) {
-                items.push(
-                    `<a class="beian-item" href="${SITE.beian.police.url}" target="_blank" rel="noopener">
-                        <span class="police-icon"></span>${SITE.beian.police.text}
-                    </a>`
-                );
-            }
-            beianEl.innerHTML = items.length
-                ? items.join('<span class="divider">·</span>')
-                : '';
-
-            document.getElementById('footer-copy').textContent = SITE.copyright;
-        }
-
-        /* =========================================================
-           模态框
-           ========================================================= */
-        function openModal(html) {
-            document.getElementById('modal-body').innerHTML = html;
-            document.getElementById('modal-mask').classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeModal() {
-            document.getElementById('modal-mask').classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        function showAbout(e) {
-            e.preventDefault();
-            openModal(`<h2>关于 ${SITE.name}</h2>${SITE.about}`);
-        }
-
-        function showLinks(e) {
-            e.preventDefault();
-            const list = SITE.links.length
-                ? SITE.links.map(l => `
-                    <a class="link-item" href="${l.url}" target="_blank" rel="noopener">
-                        <span class="link-name">${l.name}</span>
-                        ${l.desc ? `<span class="link-desc">${l.desc}</span>` : ''}
-                    </a>
-                `).join('')
-                : '<p>暂无友链，欢迎交换。</p>';
-            openModal(`<h2>友情链接</h2><div class="link-list">${list}</div>`);
-        }
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeModal();
-        });
-
-        /* =========================================================
-           原有业务逻辑
-           ========================================================= */
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile) {
             document.getElementById('upload-hint').innerHTML = '<p class="upload-tip">点击拍摄或选择相册</p>';
         }
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2000);
-        }
-
         async function generateQR() {
             const content = document.getElementById('gen-input').value.trim();
-            if (!content) return showToast('请输入内容');
+            if (!content) return Zeco.showToast('请输入内容');
 
             const btn = document.getElementById('gen-btn');
             const spinner = btn.querySelector('.spinner');
@@ -827,7 +378,7 @@
                 img.src = url;
                 document.getElementById('qr-result').style.display = 'block';
             } catch (e) {
-                showToast('网络错误，请检查服务');
+                Zeco.showToast('网络错误，请检查服务');
             } finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -848,14 +399,14 @@
         const decodeBtn = document.getElementById('decode-btn');
         let currentFile = null;
 
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
-            if (file.size > 2 * 1024 * 1024) return showToast('图片不能超过2MB');
+            if (file.size > 2 * 1024 * 1024) return Zeco.showToast('图片不能超过2MB');
 
             currentFile = file;
             const reader = new FileReader();
-            reader.onload = (ev) => {
+            reader.onload = function (ev) {
                 previewImg.src = ev.target.result;
                 previewImg.style.display = 'block';
                 uploadHint.style.display = 'none';
@@ -889,7 +440,7 @@
                 document.getElementById('decode-text').innerText = result;
                 document.getElementById('decode-result').style.display = 'block';
             } catch (e) {
-                showToast(e.message.includes('识别') ? '未识别到二维码' : '服务器错误');
+                Zeco.showToast(e.message.includes('识别') ? '未识别到二维码' : '服务器错误');
             } finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -901,7 +452,7 @@
             const text = document.getElementById('decode-text').innerText;
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text)
-                    .then(() => showToast('已复制到剪贴板'))
+                    .then(() => Zeco.showToast('已复制到剪贴板'))
                     .catch(() => fallbackCopy(text));
             } else {
                 fallbackCopy(text);
@@ -917,17 +468,12 @@
             ta.select();
             try {
                 document.execCommand('copy');
-                showToast('已复制到剪贴板');
+                Zeco.showToast('已复制到剪贴板');
             } catch {
-                showToast('复制失败，请手动选中');
+                Zeco.showToast('复制失败，请手动选中');
             }
             document.body.removeChild(ta);
         }
-
-        /* =========================================================
-           初始化
-           ========================================================= */
-        renderFooter();
     </script>
 </body>
 </html>

@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light dark">
-    <title>摄像头扫码 - zeco</title>
+    <title>扫码 - zeco</title>
 
-    <!-- 渲染前确定主题，避免闪烁 -->
     <script>
         (function () {
             try {
                 var saved = localStorage.getItem('zeco-theme');
                 var prefersDark = window.matchMedia
                     && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = saved || (prefersDark ? 'dark' : 'light');
-                document.documentElement.dataset.theme = theme;
+                document.documentElement.dataset.theme = saved || (prefersDark ? 'dark' : 'light');
             } catch (e) {
                 document.documentElement.dataset.theme = 'light';
             }
@@ -22,70 +20,62 @@
     </script>
 
     <style>
-        /* ============ 浅色 ============ */
         :root {
             color-scheme: light;
-
             --primary: #4f46e5;
             --primary-hover: #4338ca;
             --primary-soft: rgba(79, 70, 229, 0.1);
-
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
             --surface-solid: #ffffff;
             --surface-soft: #f9fafb;
             --surface-muted: #f3f4f6;
             --surface-hover: #eef2ff;
-
             --text-main: #1f2937;
             --text-sub: #6b7280;
             --text-mute: #9ca3af;
             --text-success: #059669;
             --text-error: #dc2626;
-
             --border-color: #e5e7eb;
             --border-strong: #d1d5db;
-
+            --divider: #cbd5e1;
+            --police-icon: #94a3b8;
             --toast-bg: #1f2937;
             --toast-text: #ffffff;
-
+            --modal-mask-bg: rgba(17, 24, 39, 0.45);
             --radius: 16px;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        }
 
-        /* ============ 暗黑 ============ */
+            /* ★ scanner 页卡片 600px 宽，主题按钮贴近卡片右上角 */
+            --zeco-theme-btn-right: max(16px, calc(50% - 300px - 56px));
+        }
         html[data-theme="dark"] {
             color-scheme: dark;
-
             --primary: #818cf8;
             --primary-hover: #a5b4fc;
             --primary-soft: rgba(129, 140, 248, 0.18);
-
             --bg-gradient: linear-gradient(135deg, #0b1220 0%, #1e293b 100%);
             --glass-bg: rgba(30, 41, 59, 0.92);
             --surface-solid: #1e293b;
             --surface-soft: #0f172a;
             --surface-muted: #334155;
             --surface-hover: rgba(129, 140, 248, 0.15);
-
             --text-main: #e2e8f0;
             --text-sub: #a8b5c8;
             --text-mute: #7c8ba1;
             --text-success: #34d399;
             --text-error: #f87171;
-
             --border-color: #334155;
             --border-strong: #475569;
-
+            --divider: #4b5b70;
+            --police-icon: #64748b;
             --toast-bg: #f1f5f9;
             --toast-text: #0f172a;
-
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5),
-                      0 8px 10px -6px rgba(0, 0, 0, 0.4);
+            --modal-mask-bg: rgba(0, 0, 0, 0.65);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg-gradient);
@@ -95,61 +85,48 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 84px 20px 20px;
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* ============ 顶部浮动按钮 ============ */
-        .top-btn {
+        /* ============ 顶部导航 ============ */
+        .top-nav {
             position: fixed;
             top: 16px;
-            z-index: 80;
-            height: 40px;
-            padding: 0 14px;
-            margin: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
-            color: var(--text-sub);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 50px;
             box-shadow: var(--shadow);
-            cursor: pointer;
+            z-index: 80;
+        }
+        .nav-item {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
-            font-size: 0.9rem;
-            font-weight: 500;
+            padding: 8px 18px;
+            border-radius: 50px;
             text-decoration: none;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 0.9rem;
             transition: all 0.2s;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
         }
-        .top-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary);
-            transform: translateY(-1px);
+        .nav-item:hover { color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: #fff; }
+        .nav-icon { width: 16px; height: 16px; fill: currentColor; display: block; }
+        @media (max-width: 420px) {
+            .nav-item { padding: 8px 12px; }
+            .nav-item span { display: none; }
+            .top-nav { gap: 2px; }
         }
-        .top-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-            display: block;
-        }
-
-        .back-btn {
-            left: max(16px, calc(50% - 300px - 56px));
-        }
-        .theme-btn {
-            right: max(16px, calc(50% - 300px - 56px));
-            width: 40px;
-            padding: 0;
-        }
-        .theme-btn .theme-icon {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-        html[data-theme="light"] .theme-icon-sun  { display: none; }
-        html[data-theme="dark"]  .theme-icon-moon { display: none; }
 
         /* ============ 卡片 ============ */
         .card {
@@ -160,7 +137,6 @@
             padding: 24px;
             width: 100%;
             max-width: 600px;
-            margin-top: 60px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -168,10 +144,16 @@
         .card h2 {
             font-size: 1.3rem;
             color: var(--primary);
-            margin-bottom: 16px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        .card .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-mute);
+            margin-bottom: 16px;
+            text-align: center;
         }
         .icon { width: 22px; height: 22px; fill: currentColor; }
 
@@ -189,8 +171,6 @@
             justify-content: center;
         }
         #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-        /* ★ 新增：扫描成功后显示的定格截图，覆盖在 video 上方 */
         #snapshot {
             position: absolute;
             inset: 0;
@@ -200,7 +180,6 @@
             display: none;
         }
         #snapshot.show { display: block; }
-
         .scan-frame {
             position: absolute;
             top: 50%;
@@ -223,19 +202,16 @@
             animation: scanMove 2s linear infinite;
             border-radius: 2px;
         }
-        /* ★ 定格后停止扫描线动画 */
         .video-wrap.done .scan-line { display: none; }
         .video-wrap.done .scan-frame {
             border-color: var(--text-success);
             box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.45);
         }
-
         @keyframes scanMove {
             0%   { top: 20%; }
             100% { top: 80%; }
         }
 
-        /* ============ 状态文字 ============ */
         .status {
             margin-top: 16px;
             font-size: 0.95rem;
@@ -247,7 +223,6 @@
         .status.error   { color: var(--text-error); font-weight: 600; }
         .status.success { color: var(--text-success); font-weight: 600; }
 
-        /* ============ 通用按钮 ============ */
         .btn {
             width: 100%;
             padding: 14px;
@@ -272,11 +247,8 @@
             color: var(--primary);
             border: 2px solid var(--primary);
         }
-        .btn.ghost:hover {
-            background: var(--primary-soft);
-        }
+        .btn.ghost:hover { background: var(--primary-soft); }
 
-        /* ============ 结果区 ============ */
         .result-area {
             margin-top: 20px;
             padding: 15px;
@@ -293,7 +265,6 @@
             color: var(--text-success);
             margin-bottom: 4px;
         }
-        /* ★ 新增：扫描时间 */
         .result-time {
             font-size: 0.8rem;
             color: var(--text-mute);
@@ -314,70 +285,43 @@
             overflow-y: auto;
         }
 
-        /* ============ 提示条 ============ */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--toast-bg);
-            color: var(--toast-text);
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 100;
-            max-width: 90vw;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        .toast.show { opacity: 1; }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* 手机端收紧 */
         @media (max-width: 480px) {
-            .card { margin-top: 56px; padding: 18px; }
-            .top-btn { height: 36px; padding: 0 10px; font-size: 0.85rem; }
-            .theme-btn { width: 36px; }
+            .card { padding: 18px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 返回按钮 -->
-    <a href="index.html" class="top-btn back-btn" aria-label="返回首页">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-        </svg>
-        <span>返回</span>
-    </a>
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+        <a href="index.html" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v3h-3v-3zm-3 3h2v2h-2v-2zm-3-3h2v2h-2v-2z"/>
+            </svg>
+            <span>二维码</span>
+        </a>
+        <a href="scanner.html" class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 7V4a1 1 0 011-1h3v2H5v2H3zm16-3a1 1 0 011 1v3h-2V5h-2V3h3zM3 17v3a1 1 0 001 1h3v-2H5v-2H3zm16 2v2h2a1 1 0 001-1v-3h-2v2h-1zM5 11h14v2H5v-2z"/>
+            </svg>
+            <span>扫码</span>
+        </a>
+    </nav>
 
-    <!-- 主题切换 -->
-    <button class="top-btn theme-btn" onclick="toggleTheme()" aria-label="切换主题" title="切换主题">
-        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 3a9 9 0 109 9 7 7 0 01-9-9z"/>
-        </svg>
-        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0-3a1 1 0 011 1v2a1 1 0 11-2 0V5a1 1 0 011-1zm0 14a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM4 12a1 1 0 011-1h2a1 1 0 110 2H5a1 1 0 01-1-1zm14 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM6.34 6.34a1 1 0 011.42 0l1.41 1.42a1 1 0 11-1.41 1.41L6.34 7.76a1 1 0 010-1.42zm9.9 9.9a1 1 0 011.41 0l1.42 1.41a1 1 0 11-1.42 1.42l-1.41-1.42a1 1 0 010-1.41zM6.34 17.66a1 1 0 010-1.41l1.42-1.42a1 1 0 111.41 1.42l-1.41 1.41a1 1 0 01-1.42 0zm9.9-9.9a1 1 0 010-1.41l1.41-1.42a1 1 0 111.42 1.42l-1.42 1.41a1 1 0 01-1.41 0z"/>
-        </svg>
-    </button>
-
-    <!-- 扫码卡片 -->
     <div class="card">
         <h2>
             <svg class="icon" viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v3h-3v-3zm-3 3h2v2h-2v-2zm-3-3h2v2h-2v-2z"/></svg>
             摄像头扫码
         </h2>
+        <div class="subtitle">支持二维码 / EAN-13 / Code 128 / UPC 等常见格式</div>
 
         <div class="video-wrap" id="video-wrap">
             <video id="video" playsinline webkit-playsinline muted autoplay></video>
-            <!-- ★ 定格截图，扫描成功后显示 -->
             <img id="snapshot" alt="扫描结果快照">
             <div class="scan-frame"><div class="scan-line"></div></div>
         </div>
@@ -387,7 +331,6 @@
 
         <div id="result-area" class="result-area">
             <div class="success-tip">识别成功</div>
-            <!-- ★ 扫描时间 -->
             <div id="result-time" class="result-time"></div>
             <div id="result-text" class="result-text"></div>
             <button class="btn" onclick="copyResult()" style="background:#6366f1;">复制结果</button>
@@ -395,41 +338,18 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">提示信息</div>
+    <!-- 通用组件：页脚 / 模态框 / Toast / 主题按钮 -->
+    <script src="lib/footer.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
-        /* =========================================================
-           主题切换
-           ========================================================= */
-        const THEME_KEY = 'zeco-theme';
+        /* 导航：点击当前页不重载 */
+        document.querySelectorAll('.nav-item').forEach(function (item) {
+            item.addEventListener('click', function (e) {
+                if (this.classList.contains('active')) e.preventDefault();
+            });
+        });
 
-        function applyTheme(theme) {
-            document.documentElement.dataset.theme = theme;
-        }
-
-        function toggleTheme() {
-            const cur = document.documentElement.dataset.theme || 'light';
-            const next = cur === 'dark' ? 'light' : 'dark';
-            applyTheme(next);
-            try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-        }
-
-        (function watchSystemTheme() {
-            if (!window.matchMedia) return;
-            const mq = window.matchMedia('(prefers-color-scheme: dark)');
-            const handler = (e) => {
-                let saved = null;
-                try { saved = localStorage.getItem(THEME_KEY); } catch (err) {}
-                if (!saved) applyTheme(e.matches ? 'dark' : 'light');
-            };
-            if (mq.addEventListener) mq.addEventListener('change', handler);
-            else if (mq.addListener) mq.addListener(handler);
-        })();
-
-        /* =========================================================
-           摄像头扫码
-           ========================================================= */
         const video = document.getElementById('video');
         const snapshot = document.getElementById('snapshot');
         const videoWrap = document.getElementById('video-wrap');
@@ -444,20 +364,11 @@
         let scanning = false;
         let rafId = null;
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.add('show');
-            clearTimeout(t._timer);
-            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
-        }
-
         function setStatus(msg, type) {
             statusEl.innerText = msg;
             statusEl.className = 'status' + (type ? ' ' + type : '');
         }
 
-        // 格式化时间：2026-10-08 14:35:22
         function formatTime(d) {
             const pad = (n) => String(n).padStart(2, '0');
             return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
@@ -467,7 +378,6 @@
         async function startCamera() {
             stopCamera();
 
-            // 重置 UI 状态（清掉上次的定格和结果）
             video.style.display = 'block';
             snapshot.classList.remove('show');
             snapshot.removeAttribute('src');
@@ -546,38 +456,30 @@
         }
 
         function onDecodeSuccess(text, canvas) {
-            // 1. 停止扫描循环
             scanning = false;
             if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
-            // 2. ★ 冻结当前帧：把刚画到 canvas 的画面转成图片显示，
-            //    这样释放摄像头后不会出现黑屏
             if (canvas) {
                 try {
                     snapshot.src = canvas.toDataURL('image/jpeg', 0.85);
                     snapshot.classList.add('show');
                     video.style.display = 'none';
                     videoWrap.classList.add('done');
-                } catch (e) {
-                    // 极少数情况下 toDataURL 可能失败（跨域污染等），忽略即可
-                }
+                } catch (e) {}
             }
 
-            // 3. 释放摄像头资源
             if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
             video.srcObject = null;
 
-            // 4. 显示状态与结果
             setStatus('识别成功！', 'success');
             resultText.innerText = text;
             resultTime.innerText = '扫描时间：' + formatTime(new Date());
             resultArea.classList.add('show');
 
             if (navigator.vibrate) navigator.vibrate(100);
-            showToast('识别成功');
+            Zeco.showToast('识别成功');
         }
 
-        // ★ 重新扫描：清掉结果和快照，重新启动摄像头
         function restartScan() {
             resultArea.classList.remove('show');
             resultText.innerText = '';
@@ -589,7 +491,7 @@
             const text = resultText.innerText;
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(
-                    () => showToast('已复制到剪贴板'),
+                    () => Zeco.showToast('已复制到剪贴板'),
                     () => fallbackCopy(text)
                 );
             } else {
@@ -606,26 +508,22 @@
             ta.select();
             try {
                 document.execCommand('copy');
-                showToast('已复制到剪贴板');
+                Zeco.showToast('已复制到剪贴板');
             } catch {
-                showToast('复制失败，请手动选择文本');
+                Zeco.showToast('复制失败，请手动选择文本');
             }
             document.body.removeChild(ta);
         }
 
-        // 页面隐藏时停摄像头；切回时如果还没扫到就重启扫描
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                // 页面隐藏时，无论处于哪个状态都释放摄像头
                 scanning = false;
                 if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
                 if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
                 video.srcObject = null;
             } else if (!resultArea.classList.contains('show')) {
-                // 结果区没显示，说明还没扫到，重新启动
                 startCamera();
             }
-            // 结果区已显示（快照已定格），切回时什么都不做
         });
 
         startCamera();
