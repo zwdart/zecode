@@ -135,7 +135,6 @@
             display: block;
         }
 
-        /* ★ 关键改动：宽屏时贴近卡片边缘，窄屏时退回贴屏幕边缘 */
         .back-btn {
             left: max(16px, calc(50% - 300px - 56px));
         }
@@ -191,6 +190,17 @@
         }
         #video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
+        /* ★ 新增：扫描成功后显示的定格截图，覆盖在 video 上方 */
+        #snapshot {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        #snapshot.show { display: block; }
+
         .scan-frame {
             position: absolute;
             top: 50%;
@@ -202,6 +212,7 @@
             border-radius: 16px;
             box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.35);
             pointer-events: none;
+            transition: border-color 0.2s;
         }
         .scan-line {
             position: absolute;
@@ -212,6 +223,13 @@
             animation: scanMove 2s linear infinite;
             border-radius: 2px;
         }
+        /* ★ 定格后停止扫描线动画 */
+        .video-wrap.done .scan-line { display: none; }
+        .video-wrap.done .scan-frame {
+            border-color: var(--text-success);
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.45);
+        }
+
         @keyframes scanMove {
             0%   { top: 20%; }
             100% { top: 80%; }
@@ -249,6 +267,14 @@
         }
         .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
         .btn:active { transform: translateY(0); }
+        .btn.ghost {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        .btn.ghost:hover {
+            background: var(--primary-soft);
+        }
 
         /* ============ 结果区 ============ */
         .result-area {
@@ -265,7 +291,14 @@
         .result-area .success-tip {
             font-weight: bold;
             color: var(--text-success);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+        }
+        /* ★ 新增：扫描时间 */
+        .result-time {
+            font-size: 0.8rem;
+            color: var(--text-mute);
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
         }
         .result-text {
             word-break: break-all;
@@ -342,8 +375,10 @@
             摄像头扫码
         </h2>
 
-        <div class="video-wrap">
+        <div class="video-wrap" id="video-wrap">
             <video id="video" playsinline webkit-playsinline muted autoplay></video>
+            <!-- ★ 定格截图，扫描成功后显示 -->
+            <img id="snapshot" alt="扫描结果快照">
             <div class="scan-frame"><div class="scan-line"></div></div>
         </div>
 
@@ -352,8 +387,11 @@
 
         <div id="result-area" class="result-area">
             <div class="success-tip">识别成功</div>
+            <!-- ★ 扫描时间 -->
+            <div id="result-time" class="result-time"></div>
             <div id="result-text" class="result-text"></div>
             <button class="btn" onclick="copyResult()" style="background:#6366f1;">复制结果</button>
+            <button class="btn ghost" onclick="restartScan()">重新扫描</button>
         </div>
     </div>
 
@@ -393,9 +431,12 @@
            摄像头扫码
            ========================================================= */
         const video = document.getElementById('video');
+        const snapshot = document.getElementById('snapshot');
+        const videoWrap = document.getElementById('video-wrap');
         const statusEl = document.getElementById('status');
         const resultArea = document.getElementById('result-area');
         const resultText = document.getElementById('result-text');
+        const resultTime = document.getElementById('result-time');
         const switchBtn = document.getElementById('switch-btn');
 
         let stream = null;
@@ -416,8 +457,21 @@
             statusEl.className = 'status' + (type ? ' ' + type : '');
         }
 
+        // 格式化时间：2026-10-08 14:35:22
+        function formatTime(d) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+                + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+
         async function startCamera() {
             stopCamera();
+
+            // 重置 UI 状态（清掉上次的定格和结果）
+            video.style.display = 'block';
+            snapshot.classList.remove('show');
+            snapshot.removeAttribute('src');
+            videoWrap.classList.remove('done');
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 setStatus('当前浏览器不支持摄像头 API，请改用 Chrome / Safari / Edge 等现代浏览器', 'error');
@@ -483,7 +537,7 @@
                     const imageData = ctx.getImageData(0, 0, w, h);
                     const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
                     if (code && code.data) {
-                        onDecodeSuccess(code.data);
+                        onDecodeSuccess(code.data, canvas);
                         return;
                     }
                 }
@@ -491,14 +545,44 @@
             rafId = requestAnimationFrame(scanLoop);
         }
 
-        function onDecodeSuccess(text) {
+        function onDecodeSuccess(text, canvas) {
+            // 1. 停止扫描循环
             scanning = false;
-            stopCamera();
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+            // 2. ★ 冻结当前帧：把刚画到 canvas 的画面转成图片显示，
+            //    这样释放摄像头后不会出现黑屏
+            if (canvas) {
+                try {
+                    snapshot.src = canvas.toDataURL('image/jpeg', 0.85);
+                    snapshot.classList.add('show');
+                    video.style.display = 'none';
+                    videoWrap.classList.add('done');
+                } catch (e) {
+                    // 极少数情况下 toDataURL 可能失败（跨域污染等），忽略即可
+                }
+            }
+
+            // 3. 释放摄像头资源
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            video.srcObject = null;
+
+            // 4. 显示状态与结果
             setStatus('识别成功！', 'success');
             resultText.innerText = text;
+            resultTime.innerText = '扫描时间：' + formatTime(new Date());
             resultArea.classList.add('show');
+
             if (navigator.vibrate) navigator.vibrate(100);
             showToast('识别成功');
+        }
+
+        // ★ 重新扫描：清掉结果和快照，重新启动摄像头
+        function restartScan() {
+            resultArea.classList.remove('show');
+            resultText.innerText = '';
+            resultTime.innerText = '';
+            startCamera();
         }
 
         function copyResult() {
@@ -529,12 +613,19 @@
             document.body.removeChild(ta);
         }
 
+        // 页面隐藏时停摄像头；切回时如果还没扫到就重启扫描
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                stopCamera();
+                // 页面隐藏时，无论处于哪个状态都释放摄像头
+                scanning = false;
+                if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+                if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+                video.srcObject = null;
             } else if (!resultArea.classList.contains('show')) {
+                // 结果区没显示，说明还没扫到，重新启动
                 startCamera();
             }
+            // 结果区已显示（快照已定格），切回时什么都不做
         });
 
         startCamera();
