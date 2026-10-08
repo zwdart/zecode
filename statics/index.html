@@ -116,7 +116,7 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 24px;
-            align-items: start;   /* ★ 关键：卡片按自身高度，不再互相拉伸 */
+            align-items: start;
         }
 
         @media (min-width: 768px) {
@@ -181,7 +181,6 @@
             box-shadow: 0 0 0 3px var(--primary-soft);
         }
 
-        /* 左侧输入框：初始高度与上传区一致 */
         #gen-input {
             min-height: var(--input-min-height);
         }
@@ -224,8 +223,6 @@
             background: var(--surface-soft);
             position: relative;
             overflow: hidden;
-
-            /* 初始高度与左侧输入框一致；内部内容垂直居中 */
             min-height: var(--input-min-height);
             display: flex;
             flex-direction: column;
@@ -383,6 +380,84 @@
         html[data-theme="light"] .theme-icon-sun  { display: none; }
         html[data-theme="dark"]  .theme-icon-moon { display: none; }
 
+        /* ============ 右上角功能菜单 ============ */
+        .corner-menu {
+            position: fixed;
+            top: 16px;
+            /* ★ 宽屏时贴近卡片右上角，窄屏时退回屏幕边缘 16px */
+            right: max(16px, calc(50% - 450px - 56px));
+            z-index: 80;
+        }
+        .corner-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            margin: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .corner-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        .corner-btn:active {
+            transform: translateY(0);
+        }
+        .corner-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        .corner-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 180px;
+            background: var(--surface-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18),
+                        0 8px 10px -6px rgba(0, 0, 0, 0.12);
+            padding: 6px;
+            display: none;
+        }
+        .corner-dropdown.show {
+            display: block;
+            animation: fadeIn 0.15s ease;
+        }
+        .corner-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s;
+        }
+        .corner-item:hover {
+            background: var(--surface-hover);
+            color: var(--primary);
+        }
+        .corner-item svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
         /* ============ 模态框 ============ */
         .modal-mask {
             position: fixed;
@@ -479,6 +554,23 @@
     </style>
 </head>
 <body>
+
+    <!-- ============ 右上角功能菜单 ============ -->
+    <div class="corner-menu" id="corner-menu">
+        <button class="corner-btn" onclick="toggleCornerMenu(event)" aria-label="功能菜单" title="功能菜单">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+            </svg>
+        </button>
+        <div class="corner-dropdown" id="corner-dropdown">
+            <a href="scanner.html" class="corner-item">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9.5 3a6.5 6.5 0 015.98 9.03l4.24 4.24-1.41 1.41-4.24-4.24A6.5 6.5 0 119.5 3zm0 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/>
+                </svg>
+                <span>摄像头扫码</span>
+            </a>
+        </div>
+    </div>
 
     <div class="header">
         <h1>
@@ -618,6 +710,24 @@
             if (mq.addEventListener) mq.addEventListener('change', handler);
             else if (mq.addListener) mq.addListener(handler);
         })();
+
+        /* =========================================================
+           右上角功能菜单
+           ========================================================= */
+        function toggleCornerMenu(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('corner-dropdown').classList.toggle('show');
+        }
+        function closeCornerMenu() {
+            document.getElementById('corner-dropdown').classList.remove('show');
+        }
+        document.addEventListener('click', function (e) {
+            const menu = document.getElementById('corner-menu');
+            if (menu && !menu.contains(e.target)) closeCornerMenu();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeCornerMenu();
+        });
 
         /* =========================================================
            渲染页脚

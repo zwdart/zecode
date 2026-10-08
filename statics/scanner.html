@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
+    <title>摄像头扫码 - zeco</title>
+
+    <!-- 渲染前确定主题，避免闪烁 -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('zeco-theme');
+                var prefersDark = window.matchMedia
+                    && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.dataset.theme = theme;
+            } catch (e) {
+                document.documentElement.dataset.theme = 'light';
+            }
+        })();
+    </script>
+
+    <style>
+        /* ============ 浅色 ============ */
+        :root {
+            color-scheme: light;
+
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-soft: rgba(79, 70, 229, 0.1);
+
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --surface-solid: #ffffff;
+            --surface-soft: #f9fafb;
+            --surface-muted: #f3f4f6;
+            --surface-hover: #eef2ff;
+
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --text-mute: #9ca3af;
+            --text-success: #059669;
+            --text-error: #dc2626;
+
+            --border-color: #e5e7eb;
+            --border-strong: #d1d5db;
+
+            --toast-bg: #1f2937;
+            --toast-text: #ffffff;
+
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ============ 暗黑 ============ */
+        html[data-theme="dark"] {
+            color-scheme: dark;
+
+            --primary: #818cf8;
+            --primary-hover: #a5b4fc;
+            --primary-soft: rgba(129, 140, 248, 0.18);
+
+            --bg-gradient: linear-gradient(135deg, #0b1220 0%, #1e293b 100%);
+            --glass-bg: rgba(30, 41, 59, 0.92);
+            --surface-solid: #1e293b;
+            --surface-soft: #0f172a;
+            --surface-muted: #334155;
+            --surface-hover: rgba(129, 140, 248, 0.15);
+
+            --text-main: #e2e8f0;
+            --text-sub: #a8b5c8;
+            --text-mute: #7c8ba1;
+            --text-success: #34d399;
+            --text-error: #f87171;
+
+            --border-color: #334155;
+            --border-strong: #475569;
+
+            --toast-bg: #f1f5f9;
+            --toast-text: #0f172a;
+
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5),
+                      0 8px 10px -6px rgba(0, 0, 0, 0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ============ 顶部浮动按钮 ============ */
+        .top-btn {
+            position: fixed;
+            top: 16px;
+            z-index: 80;
+            height: 40px;
+            padding: 0 14px;
+            margin: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .top-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        .top-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: block;
+        }
+
+        /* ★ 关键改动：宽屏时贴近卡片边缘，窄屏时退回贴屏幕边缘 */
+        .back-btn {
+            left: max(16px, calc(50% - 300px - 56px));
+        }
+        .theme-btn {
+            right: max(16px, calc(50% - 300px - 56px));
+            width: 40px;
+            padding: 0;
+        }
+        .theme-btn .theme-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+        html[data-theme="light"] .theme-icon-sun  { display: none; }
+        html[data-theme="dark"]  .theme-icon-moon { display: none; }
+
+        /* ============ 卡片 ============ */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card h2 {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .icon { width: 22px; height: 22px; fill: currentColor; }
+
+        /* ============ 视频区 ============ */
+        .video-wrap {
+            position: relative;
+            width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 1/1;
+            max-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60%;
+            height: 60%;
+            transform: translate(-50%, -50%);
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+        }
+        .scan-line {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            animation: scanMove 2s linear infinite;
+            border-radius: 2px;
+        }
+        @keyframes scanMove {
+            0%   { top: 20%; }
+            100% { top: 80%; }
+        }
+
+        /* ============ 状态文字 ============ */
+        .status {
+            margin-top: 16px;
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            text-align: center;
+            min-height: 24px;
+            line-height: 1.5;
+        }
+        .status.error   { color: var(--text-error); font-weight: 600; }
+        .status.success { color: var(--text-success); font-weight: 600; }
+
+        /* ============ 通用按钮 ============ */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        /* ============ 结果区 ============ */
+        .result-area {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--surface-muted);
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+        }
+        .result-area.show { display: block; }
+        .result-area .success-tip {
+            font-weight: bold;
+            color: var(--text-success);
+            margin-bottom: 5px;
+        }
+        .result-text {
+            word-break: break-all;
+            font-family: monospace;
+            background: var(--surface-solid);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        /* ============ 提示条 ============ */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--toast-bg);
+            color: var(--toast-text);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+            max-width: 90vw;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .toast.show { opacity: 1; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 手机端收紧 */
+        @media (max-width: 480px) {
+            .card { margin-top: 56px; padding: 18px; }
+            .top-btn { height: 36px; padding: 0 10px; font-size: 0.85rem; }
+            .theme-btn { width: 36px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 返回按钮 -->
+    <a href="index.html" class="top-btn back-btn" aria-label="返回首页">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+        <span>返回</span>
+    </a>
+
+    <!-- 主题切换 -->
+    <button class="top-btn theme-btn" onclick="toggleTheme()" aria-label="切换主题" title="切换主题">
+        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a9 9 0 109 9 7 7 0 01-9-9z"/>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0-3a1 1 0 011 1v2a1 1 0 11-2 0V5a1 1 0 011-1zm0 14a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zM4 12a1 1 0 011-1h2a1 1 0 110 2H5a1 1 0 01-1-1zm14 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM6.34 6.34a1 1 0 011.42 0l1.41 1.42a1 1 0 11-1.41 1.41L6.34 7.76a1 1 0 010-1.42zm9.9 9.9a1 1 0 011.41 0l1.42 1.41a1 1 0 11-1.42 1.42l-1.41-1.42a1 1 0 010-1.41zM6.34 17.66a1 1 0 010-1.41l1.42-1.42a1 1 0 111.41 1.42l-1.41 1.41a1 1 0 01-1.42 0zm9.9-9.9a1 1 0 010-1.41l1.41-1.42a1 1 0 111.42 1.42l-1.42 1.41a1 1 0 01-1.41 0z"/>
+        </svg>
+    </button>
+
+    <!-- 扫码卡片 -->
+    <div class="card">
+        <h2>
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm3 3h3v3h-3v-3zm-3 3h2v2h-2v-2zm-3-3h2v2h-2v-2z"/></svg>
+            摄像头扫码
+        </h2>
+
+        <div class="video-wrap">
+            <video id="video" playsinline webkit-playsinline muted autoplay></video>
+            <div class="scan-frame"><div class="scan-line"></div></div>
+        </div>
+
+        <div id="status" class="status">正在启动摄像头…</div>
+        <button id="switch-btn" class="btn" onclick="switchCamera()" style="display:none;">切换摄像头</button>
+
+        <div id="result-area" class="result-area">
+            <div class="success-tip">识别成功</div>
+            <div id="result-text" class="result-text"></div>
+            <button class="btn" onclick="copyResult()" style="background:#6366f1;">复制结果</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">提示信息</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        /* =========================================================
+           主题切换
+           ========================================================= */
+        const THEME_KEY = 'zeco-theme';
+
+        function applyTheme(theme) {
+            document.documentElement.dataset.theme = theme;
+        }
+
+        function toggleTheme() {
+            const cur = document.documentElement.dataset.theme || 'light';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+        }
+
+        (function watchSystemTheme() {
+            if (!window.matchMedia) return;
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            const handler = (e) => {
+                let saved = null;
+                try { saved = localStorage.getItem(THEME_KEY); } catch (err) {}
+                if (!saved) applyTheme(e.matches ? 'dark' : 'light');
+            };
+            if (mq.addEventListener) mq.addEventListener('change', handler);
+            else if (mq.addListener) mq.addListener(handler);
+        })();
+
+        /* =========================================================
+           摄像头扫码
+           ========================================================= */
+        const video = document.getElementById('video');
+        const statusEl = document.getElementById('status');
+        const resultArea = document.getElementById('result-area');
+        const resultText = document.getElementById('result-text');
+        const switchBtn = document.getElementById('switch-btn');
+
+        let stream = null;
+        let currentFacingMode = 'environment';
+        let scanning = false;
+        let rafId = null;
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function setStatus(msg, type) {
+            statusEl.innerText = msg;
+            statusEl.className = 'status' + (type ? ' ' + type : '');
+        }
+
+        async function startCamera() {
+            stopCamera();
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setStatus('当前浏览器不支持摄像头 API，请改用 Chrome / Safari / Edge 等现代浏览器', 'error');
+                return;
+            }
+            if (!window.isSecureContext) {
+                setStatus('⚠️ 当前页面不是安全上下文（HTTPS），手机通过 IP 访问时必须使用 HTTPS', 'error');
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: currentFacingMode,
+                        width:  { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                video.srcObject = stream;
+                await video.play();
+                setStatus('请将二维码对准扫描框');
+                switchBtn.style.display = 'flex';
+                scanning = true;
+                requestAnimationFrame(scanLoop);
+            } catch (err) {
+                let msg = '无法访问摄像头：';
+                switch (err.name) {
+                    case 'NotAllowedError':  msg += '用户拒绝了权限，请在浏览器设置中允许访问摄像头'; break;
+                    case 'NotFoundError':    msg += '未找到摄像头设备'; break;
+                    case 'NotReadableError': msg += '摄像头被其他程序占用，请关闭其他应用后重试'; break;
+                    case 'SecurityError':    msg += '必须使用 HTTPS 访问'; break;
+                    default:                 msg += (err.message || err.name) + '。手机通过 IP 访问请确保使用 HTTPS';
+                }
+                setStatus(msg, 'error');
+            }
+        }
+
+        function stopCamera() {
+            scanning = false;
+            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            video.srcObject = null;
+        }
+
+        async function switchCamera() {
+            currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+            await startCamera();
+        }
+
+        function scanLoop() {
+            if (!scanning) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = scanLoop._canvas || (scanLoop._canvas = document.createElement('canvas'));
+                const w = video.videoWidth;
+                const h = video.videoHeight;
+
+                if (w && h) {
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(video, 0, 0, w, h);
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+                    if (code && code.data) {
+                        onDecodeSuccess(code.data);
+                        return;
+                    }
+                }
+            }
+            rafId = requestAnimationFrame(scanLoop);
+        }
+
+        function onDecodeSuccess(text) {
+            scanning = false;
+            stopCamera();
+            setStatus('识别成功！', 'success');
+            resultText.innerText = text;
+            resultArea.classList.add('show');
+            if (navigator.vibrate) navigator.vibrate(100);
+            showToast('识别成功');
+        }
+
+        function copyResult() {
+            const text = resultText.innerText;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(
+                    () => showToast('已复制到剪贴板'),
+                    () => fallbackCopy(text)
+                );
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('已复制到剪贴板');
+            } catch {
+                showToast('复制失败，请手动选择文本');
+            }
+            document.body.removeChild(ta);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopCamera();
+            } else if (!resultArea.classList.contains('show')) {
+                startCamera();
+            }
+        });
+
+        startCamera();
+    </script>
+</body>
+</html>
