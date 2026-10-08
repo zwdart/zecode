@@ -1,0 +1,21 @@
+# 构建产物
+/dist/
+/qrmaster
+/qrmaster.exe
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 本地临时配置
+*.local.toml
+
+/dist/
+/coverage.out
+*.test

@@ -1,0 +1,23 @@
+# ZeCode 服务配置
+
+# HTTP 服务端口
+port = 1880
+
+# 静态资源目录（前端 HTML/JS 所在目录）
+static_dir = "./statics"
+
+# 允许上传的最大图片大小（单位：MB）
+max_upload_size_mb = 6
+
+# 单次二维码识别的最大耗时（单位：秒）
+decode_timeout_seconds = 8
+
+# 生成二维码时请求参数的最大长度（防止 URL 过长）
+max_query_length = 2048
+
+# 生成的二维码尺寸（像素，边长）
+qr_size = 256
+
+# true: 使用编译时嵌入的 statics（生产/发布用）
+# false: 从 static_dir 磁盘目录读取（开发时改前端无需重编译）
+use_embedded_static = true
