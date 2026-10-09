@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"image"
 	"io/fs"
@@ -111,6 +112,8 @@ func main() {
 		os.Exit(1)
 	}
 	http.Handle("/", http.FileServer(staticFS))
+
+	http.HandleFunc("/zing", zingHandler)
 
 	// --- 1. 生成二维码接口 ---
 	http.HandleFunc("/api/generate", func(w http.ResponseWriter, r *http.Request) {
@@ -247,4 +250,50 @@ func GetLocalIPv4s() []string {
 		}
 	}
 	return ips
+}
+
+func zingHandler(w http.ResponseWriter, r *http.Request) {
+	// 1. 准备数据
+	// 注意：time.Time 类型在 JSON 序列化时默认输出为 RFC3339格式字符串
+	data := map[string]interface{}{
+		"message": "pong",
+		"now":     time.Now(),
+		"ip":      getClientIP(r), // 标准库中没有 c.ClientIP()，需手动实现或从 RemoteAddr 获取
+		"pid":     os.Getpid(),
+		"time":    buildTime,
+		"git":     version,
+	}
+
+	// 2. 设置响应头
+	// 必须包含 charset=utf-8 以防止中文乱码，并告知客户端这是 JSON 数据
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	// 3. 设置 HTTP 状态码
+	// 必须在写入 Body 之前调用，否则默认返回 200 且无法再修改
+	w.WriteHeader(http.StatusOK)
+
+	// 4. 序列化并写入响应
+	// 使用 json.NewEncoder 直接写入 w，比 json.Marshal + w.Write 更节省内存且支持流式处理
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// 如果编码失败（极少发生，除非数据结构包含不支持的类型如 chan/func）
+		// 注意：此时 Header 和 Status 可能已经发送，无法再返回 JSON 错误，通常记录日志即可
+		fmt.Printf("JSON encode error: %v\n", err)
+		return
+	}
+}
+
+// 辅助函数：模拟 Gin 的 c.ClientIP()
+// Gin 会检查 X-Forwarded-For 等代理头，标准库需自行实现类似逻辑
+func getClientIP(r *http.Request) string {
+	// 简单实现：优先取 X-Real-IP 或 X-Forwarded-For，否则取 RemoteAddr
+	ip := r.Header.Get("X-Real-IP")
+	if ip != "" {
+		return ip
+	}
+	ip = r.Header.Get("X-Forwarded-For")
+	if ip != "" {
+		return ip
+	}
+	// RemoteAddr 格式通常为 "IP:Port"，需要去除端口
+	return r.RemoteAddr
 }
