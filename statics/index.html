@@ -369,7 +369,8 @@
             text.style.display = 'none';
 
             try {
-                const res = await fetch(`/api/generate?content=${encodeURIComponent(content)}`);
+                // 新路径：/api/qrcode/generate
+                const res = await fetch(`/api/qrcode/generate?content=${encodeURIComponent(content)}`);
                 if (!res.ok) throw new Error('生成失败');
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
@@ -431,7 +432,8 @@
             formData.append('qrimage', currentFile);
 
             try {
-                const res = await fetch('/api/decode', { method: 'POST', body: formData });
+                // 新路径：/api/qrcode/decode
+                const res = await fetch('/api/qrcode/decode', { method: 'POST', body: formData });
                 if (!res.ok) {
                     const err = await res.text();
                     throw new Error(err);
